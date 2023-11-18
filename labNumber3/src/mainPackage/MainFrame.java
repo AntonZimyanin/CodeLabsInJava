@@ -291,6 +291,9 @@ public class MainFrame extends JFrame {
         getContentPane().add(hBoxResult);
     }
 
+
+
+    
     protected void saveToTextFile(File selectedFile) {
         try {
             // Создать новый символьный поток вывода, направленный в указанный файл
