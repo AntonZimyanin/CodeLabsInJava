@@ -1,6 +1,6 @@
 package mainPackage;
 
-public abstract class Food implements Consumable{
+public class Food implements Consumable{
     private String name;
 
     public Food(String name){ 
@@ -18,6 +18,10 @@ public abstract class Food implements Consumable{
     @Override
     public String toString(){ 
         return name;
+    }
+
+    public void consume() { 
+        consume();
     }
 
     @Override

@@ -6,10 +6,10 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
+import java.io.DataOutputStream;
+import java.io.FileOutputStream;
 
 import javax.swing.*;
-
-
 
 @SuppressWarnings("serial")
 public class MainFrame extends JFrame {
@@ -33,16 +33,16 @@ public class MainFrame extends JFrame {
     private Box hBoxResult; //
     // Визуализатор ячеек таблицы
     private FunctionTableCellRenderer renderer = new FunctionTableCellRenderer();
-    private mainPackage.FunctionTableModel data;  // модель данных с результами вычислений
+    private mainPackage.FunctionTableModel data; // модель данных с результами вычислений
 
     public MainFrame() {
         super("Табулирование функции на отрезке"); // Обязательный вызов конструктора предка
         setSize(WIDTH, HEIGHT);// Установить размеры окна
         Toolkit kit = Toolkit.getDefaultToolkit();
-        setLocation((kit.getScreenSize().width - WIDTH)/2, // Отцентрировать окно приложения на экране
-                (kit.getScreenSize().height - HEIGHT)/2);
+        setLocation((kit.getScreenSize().width - WIDTH) / 2, // Отцентрировать окно приложения на экране
+                (kit.getScreenSize().height - HEIGHT) / 2);
 
-        JMenuBar menuBar = new JMenuBar();  //Создать полосу меню и установить ее в верхнюю часть фрейма
+        JMenuBar menuBar = new JMenuBar(); // Создать полосу меню и установить ее в верхнюю часть фрейма
         setJMenuBar(menuBar);
         JMenu fileMenu = new JMenu("Файл");
         menuBar.add(fileMenu);
@@ -57,29 +57,56 @@ public class MainFrame extends JFrame {
             public void actionPerformed(ActionEvent event) {
                 // Если экземпляр диалогового окна "Открыть файл" еще не создан,
                 // то создать его и инициализировать текущей директорией
-                if (fileChooser==null) {
+                if (fileChooser == null) {
                     fileChooser = new JFileChooser();
                     fileChooser.setCurrentDirectory(new File("."));
                 }
 
                 // Показать диалоговое окно
-                if (fileChooser.showSaveDialog(MainFrame.this) ==
-                        JFileChooser.APPROVE_OPTION)
+                if (fileChooser.showSaveDialog(MainFrame.this) == JFileChooser.APPROVE_OPTION)
                     saveToTextFile(fileChooser.getSelectedFile());
             }
         };
         saveToTextMenuItem = fileMenu.add(saveToTextAction);
         saveToTextMenuItem.setEnabled(false);
 
+        Action saveToGraphicsAction = new AbstractAction("Сохранить данные для построения графика") {
+
+            public void actionPerformed(ActionEvent event) {
+                if (fileChooser == null) {
+                    // Если экземпляр диалогового окна
+                    // "Открыть файл" ещѐ не создан,
+                    // то создать его
+                    fileChooser = new JFileChooser();
+                    // и инициализировать текущей директорией
+                    fileChooser.setCurrentDirectory(new File("."));
+                }
+                // Показать диалоговое окно
+                if (fileChooser.showSaveDialog(MainFrame.this) == JFileChooser.APPROVE_OPTION)
+                    ;
+                // Если результат его показа успешный,
+                // сохранить данные в двоичный файл
+                saveToGraphicsFile(
+                        fileChooser.getSelectedFile());
+            }
+        };
+        // Добавить соответствующий пункт подменю в меню "Файл"
+        saveToTextMenuItem = fileMenu.add(saveToGraphicsAction);
+        // По умолчанию пункт меню является недоступным (данных ещѐ нет)
+        saveToTextMenuItem.setEnabled(false);
+
         // Создать новое действие по поиску значений функции
         Action searchValueAction = new AbstractAction("Найти значение функции") {
             public void actionPerformed(ActionEvent event) {
-                // Запросить пользователя ввести искомую строку
-                String value = JOptionPane.showInputDialog(MainFrame.this,
-                        "Введите значение для поиска", "Поиск значения",
+                // Запросить пользователя ввести искомую строку для x
+                String valueX = JOptionPane.showInputDialog(MainFrame.this,
+                        "Введите значение x для поиска", "Поиск значения",
                         JOptionPane.QUESTION_MESSAGE);
-                // Установить введенное значение в качестве иголки
-                renderer.setNeedle(value);
+                // Запросить пользователя ввести искомую строку для y
+                String valueY = valueX;
+                // Установить введенные значения в качестве иголок
+                renderer.setNeedleX(valueX);
+                renderer.setNeedleY(valueY);
                 // Обновить таблицу
                 getContentPane().repaint();
             }
@@ -87,8 +114,6 @@ public class MainFrame extends JFrame {
 
         searchValueMenuItem = tableMenu.add(searchValueAction);
         searchValueMenuItem.setEnabled(false);
-
-
 
         Action aboutProgrammAction = new AbstractAction("О программе") {
             public void actionPerformed(ActionEvent event) {
@@ -100,14 +125,13 @@ public class MainFrame extends JFrame {
 
         SpravkaMenu.add(aboutProgrammAction);
 
+        textFieldFrom = new JTextField("0.0", 10);
+        // Установить максимальный размер равный предпочтительному, чтобы
+        // предотвратить увеличение размера поля ввода
+        textFieldFrom.setMaximumSize(textFieldFrom.getPreferredSize());
 
-    textFieldFrom = new JTextField("0.0", 10);
-    // Установить максимальный размер равный предпочтительному, чтобы
-    // предотвратить увеличение размера поля ввода
-    textFieldFrom.setMaximumSize(textFieldFrom.getPreferredSize());
-
-    textFieldTo = new JTextField("1.0", 10);
-    textFieldTo.setMaximumSize(textFieldTo.getPreferredSize());
+        textFieldTo = new JTextField("1.0", 10);
+        textFieldTo.setMaximumSize(textFieldTo.getPreferredSize());
 
         // Создать поле для ввода шага по X
         textFieldStep = new JTextField("0.1", 10);
@@ -115,9 +139,8 @@ public class MainFrame extends JFrame {
 
         // Создать контейнер типа "коробка с горизонтальной укладкой"
         Box hboxXRange = Box.createHorizontalBox();
-        //hboxXRange.setBorder(BorderFactory.createTitledBorder(
-          //      BorderFactory.createEtchedBorder(), "Настройки:"));
-
+        // hboxXRange.setBorder(BorderFactory.createTitledBorder(
+        // BorderFactory.createEtchedBorder(), "Настройки:"));
 
         hboxXRange.add(Box.createHorizontalGlue());
         hboxXRange.add(new JLabel("X начальное:"));
@@ -160,16 +183,12 @@ public class MainFrame extends JFrame {
         group.add(Minus);
         group.setSelected(Minus.getModel(), true);
 
-
-
         Box Param = Box.createHorizontalBox();
         Param.add(Box.createHorizontalGlue());
-        
-        
 
         Box Nast = Box.createVerticalBox();
         Nast.setBorder(BorderFactory.createTitledBorder(
-                     BorderFactory.createEtchedBorder(), "Настройки:"));
+                BorderFactory.createEtchedBorder(), "Настройки:"));
         Nast.add(Box.createVerticalGlue());
         Nast.add(hboxXRange);
         Nast.add(Box.createHorizontalStrut(20));
@@ -179,10 +198,10 @@ public class MainFrame extends JFrame {
         Nast.add(Box.createVerticalGlue());
 
         // Установить предпочтительный размер области больше
-        // минимального, чтобы при  компоновке область совсем не сдавили
+        // минимального, чтобы при компоновке область совсем не сдавили
         Nast.setPreferredSize(new Dimension(
                 new Double(Nast.getMaximumSize().getWidth()).intValue(),
-                new Double(Nast.getMinimumSize().getHeight()*1.5).intValue()));
+                new Double(Nast.getMinimumSize().getHeight() * 1.5).intValue()));
         // Установить область в верхнюю (северную) часть компоновки
         getContentPane().add(Nast, BorderLayout.NORTH);
 
@@ -196,7 +215,7 @@ public class MainFrame extends JFrame {
                     Double to = Double.parseDouble(textFieldTo.getText());
                     Double step = Double.parseDouble(textFieldStep.getText());
                     Double param = Double.parseDouble(textFieldParam.getText());
-                    if(Plus.isSelected()){
+                    if (Plus.isSelected()) {
                         param = -param;
                     }
                     // На основе считанных данных создать экземпляр модели таблицы
@@ -204,24 +223,24 @@ public class MainFrame extends JFrame {
                     // Создать новый экземпляр таблицы
                     JTable table = new JTable(data);
                     // Установить в качестве визуализатора ячеек для класса Double
-                    //разработанный визуализатор
+                    // разработанный визуализатор
                     table.setDefaultRenderer(Double.class, renderer);
                     // Установить размер строки таблицы в 30 пикселов
                     table.setRowHeight(30);
                     // Удалить все вложенные элементы из контейнера hBoxResult
                     hBoxResult.removeAll();
                     // Добавить в hBoxResult таблицу, "обернутую" в панель
-                    //с полосами прокрутки
+                    // с полосами прокрутки
                     hBoxResult.add(new JScrollPane(table));
                     // Перерасположить компоненты в hBoxResult и выполнить
-                    //перерисовку
+                    // перерисовку
                     hBoxResult.revalidate();
                     // Сделать ряд элементов меню доступными
                     saveToTextMenuItem.setEnabled(true);
                     searchValueMenuItem.setEnabled(true);
                 } catch (NumberFormatException ex) {
                     // В случае ошибки преобразования чисел показать сообщение об
-                    //ошибке
+                    // ошибке
                     JOptionPane.showMessageDialog(MainFrame.this,
                             "Ошибка в формате записи числа с плавающей точкой",
                             "Ошибочный формат числа", JOptionPane.WARNING_MESSAGE);
@@ -260,21 +279,21 @@ public class MainFrame extends JFrame {
         // при компоновке окна область совсем не сдавили
         hboxButtons.setPreferredSize(new Dimension(
                 new Double(hboxButtons.getMaximumSize().getWidth()).intValue(),
-                new Double(hboxButtons.getMinimumSize().getHeight()*1.5).intValue()));
+                new Double(hboxButtons.getMinimumSize().getHeight() * 1.5).intValue()));
         // Разместить контейнер с кнопками в нижней (южной) области граничной
-//компоновки
+        // компоновки
         getContentPane().add(hboxButtons, BorderLayout.SOUTH);
 
         // Область для вывода результата пока что пустая
         hBoxResult = Box.createHorizontalBox();
         // Установить контейнер hBoxResult в главной (центральной) области
-//граничной компоновки
+        // граничной компоновки
         getContentPane().add(hBoxResult);
     }
 
     protected void saveToTextFile(File selectedFile) {
         try {
-            // Создать новый символьный поток вывода, направленный в  указанный файл
+            // Создать новый символьный поток вывода, направленный в указанный файл
             PrintStream out = new PrintStream(selectedFile);
 
             // Записать в поток вывода заголовочные сведения
@@ -285,9 +304,9 @@ public class MainFrame extends JFrame {
             out.println("====================================================");
 
             // Записать в поток вывода значения в точках
-            for (int i = 0; i<data.getRowCount(); i++)
-                out.println("Значение в точке " + data.getValueAt(i,0)  + " равно " +
-                        data.getValueAt(i,1));
+            for (int i = 0; i < data.getRowCount(); i++)
+                out.println("Значение в точке " + data.getValueAt(i, 0) + " равно " +
+                        data.getValueAt(i, 1));
 
             // Закрыть поток
             out.close();
@@ -297,12 +316,28 @@ public class MainFrame extends JFrame {
         }
     }
 
+    protected void saveToGraphicsFile(File selectedFile) {
+        try {
+        
+        DataOutputStream out = new DataOutputStream(new FileOutputStream(selectedFile));
+        for (int i = 0; i<data.getRowCount(); i++) {
+        out.writeDouble((Double)data.getValueAt(i,0));
+        out.writeDouble((Double)data.getValueAt(i,1));
+        }
+        // Закрыть поток вывода
+        out.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        
+        }
+        }
+
     public static void main(String[] args) {
         // Создать экземпляр главного окна
         MainFrame frame = new MainFrame();
         // Задать действие, выполняемое при закрытии окна
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        //Показать главное окно приложения
+        // Показать главное окно приложения
         frame.setVisible(true);
     }
 }

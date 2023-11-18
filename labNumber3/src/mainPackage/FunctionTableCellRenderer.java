@@ -16,6 +16,8 @@ public class FunctionTableCellRenderer implements TableCellRenderer {
     private JLabel label = new JLabel();
 
     private String needle = null;
+    private String needleX = null;
+    private String needleY = null;    
     private DecimalFormat formatter = (DecimalFormat)NumberFormat.getInstance();
 
     public FunctionTableCellRenderer() {
@@ -33,24 +35,34 @@ public class FunctionTableCellRenderer implements TableCellRenderer {
     }
 
     public Component getTableCellRendererComponent(JTable table, Object value, boolean
-            isSelected, boolean hasFocus, int row, int col) {
-        // Преобразовать double в строку с помощью форматировщика
-        String formattedDouble = formatter.format(value);
-        // Установить текст надписи равным строковому представлению числа
-        label.setText(formattedDouble);
-        if (col==1 && needle!=null && needle.equals(formattedDouble)) {
-            // Номер столбца = 1 (т.е. второй столбец) + иголка не null (значит что-то ищем)
-            // + значение иголки совпадает со значением ячейки таблицы - окрасить задний фон
-            // панели в красный цвет
-            panel.setBackground(Color.RED);
-        } else {
-            // Иначе - в обычный белый
-            panel.setBackground(Color.WHITE);
-        }
-        return panel;
+        isSelected, boolean hasFocus, int row, int col) {
+    // Преобразовать double в строку с помощью форматировщика
+    String formattedDouble = formatter.format(value);
+    // Установить текст надписи равным строковому представлению числа
+    label.setText(formattedDouble);
+    if ((col==0 && needleX !=null && needleX.equals(formattedDouble)) || 
+        (col==1 && needleY !=null && needleY.equals(formattedDouble))) {
+        // Номер столбца = 0 или 1 (т.е. первый или второй столбец) + иголка не null (значит что-то ищем)
+        // + значение иголки совпадает со значением ячейки таблицы - окрасить задний фон
+        // панели в красный цвет
+        panel.setBackground(Color.RED);
+    } else {
+        // Иначе - в обычный белый
+        panel.setBackground(Color.WHITE);
     }
+    return panel;
+}
+
 
     public void setNeedle(String needle) {
         this.needle = needle;
+    }
+
+    public void setNeedleX(String needle) {
+        this.needleX = needle;
+    }
+
+    public void setNeedleY(String needle) {
+        this.needleY = needle;
     }
 }
